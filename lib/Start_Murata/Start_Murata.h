@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "Murata.h"
 #include "ByteConvert.h"
-
+#include "ArduinoNvs.h"
 
 class Start_Murata
 {
@@ -19,12 +19,13 @@ struct MURATA_LoRA
         unsigned long INTERVAL_STATUS =60000*10;
         uint8_t COUNT_ROUND = 0;
         bool send_data_tx_LoRA = false;
+        int config_speed[4] = {50,10,10,10};
 } MURATA;
 unsigned long previousMillis =0;
 void initialize_radio();
 void UPLINK();
 void Enable_status();
 void Loop_LoRA(uint8_t amount_car);
-void DOWNLINK();
+int* DOWNLINK();
 };
 #endif

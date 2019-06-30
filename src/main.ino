@@ -38,9 +38,9 @@ void setup()
         ledcWrite(LEDCHANNEL, 256);
         blue_fn.blueinit();
         Serial.println(F("StartupLoRA"));
-        start_murata.initialize_radio();//ฟังก์ชั่นขารีเซ็ท LoRA
+        // start_murata.initialize_radio();//ฟังก์ชั่นขารีเซ็ท LoRA
         xTaskCreate(Loop_BT_CF, "Loop_BT_CF", 2048, NULL, 1, NULL);
-        xTaskCreate(Loop_LoRA_task, "Loop_LoRA_task", 2048, NULL, 2, NULL);
+        // xTaskCreate(Loop_LoRA_task, "Loop_LoRA_task", 2048, NULL, 2, NULL);
         // xTaskCreate(Loop_byte_Test, "Loop_byte_Test", 4096, NULL, 3, NULL);
         // xTaskCreate(Loop_LED_monitor, "Loop_LED_monitor", 2048, NULL, 5, NULL);
 }
@@ -80,7 +80,7 @@ void byte_Test()
                                 DELAY.previousMillis = currentMillis;
                                 GET_DATA.Sp_val = GET_DATA.data_array[4];
                                 ledcWrite(LEDCHANNEL, dimmer_LED(SOLAR_VOLT.val_volt));
-                                seg.LED_monitor(GET_DATA.Sp_val,*(rx_data+0),*(rx_data+1));//set_startspeed&Alertspeed
+                                seg.LED_monitor(GET_DATA.Sp_val,NVS.getInt("Sp_St"),NVS.getInt("Sp_Lt"));//set_startspeed&Alertspeed
                                 Serial.print("dimmer  ");
                                 Serial.println(dimmer_LED(SOLAR_VOLT.val_volt));
                                 Serial.print("Volt  ");
@@ -112,22 +112,23 @@ void byte_Test()
 //         }
 //         vTaskDelete( NULL );
 // }
-void Loop_LoRA_task( void * parameter )
-{
-        while (1)
-        {
-                start_murata.Loop_LoRA(*(rx_data+2));//set_Amount_car
-                start_murata.DOWNLINK();
-                start_murata.Enable_status();
-                delay(10);
-        }
-        vTaskDelete( NULL );
-}
+// void Loop_LoRA_task( void * parameter )
+// {
+//         while (1)
+//         {
+//                 int* murata_cf = start_murata.DOWNLINK();
+//                 start_murata.Loop_LoRA(NVS.getInt("Am_car"));//set_Amount_car
+//                 start_murata.DOWNLINK();
+//                 start_murata.Enable_status();
+//                 delay(10);
+//         }
+//         vTaskDelete( NULL );
+// }
 // void Loop_LED_monitor( void * parameter )
 // {
 //         while (1)
 //         {
-//                 seg.LED_monitor(GET_DATA.Sp_val,*(rx_data+0),*(rx_data+1));
+//                 seg.LED_monitor(GET_DATA.Sp_val,NVS.getInt("Sp_St"),NVS.getInt("Sp_Lt"));
 //                 delay(10);
 //         }
 //         vTaskDelete( NULL );
@@ -136,9 +137,9 @@ void Loop_BT_CF( void * parameter )
 {
         while (1)
         {
-                rx_data = blue_fn.blue_rx();
+                blue_fn.blue_rx();
                 delay(1000);
-                Serial.printf("val0\t%d val1\t%d val2\t%d\n",*(rx_data+0),*(rx_data+1),*(rx_data+1));
+                Serial.printf("val0\t%d val1\t%d val2\t%d\n",NVS.getInt("Sp_St"),NVS.getInt("Sp_Lt"),NVS.getInt("Bluecf_3"));
         }
         vTaskDelete( NULL );
 }

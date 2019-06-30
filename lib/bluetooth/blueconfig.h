@@ -2,6 +2,7 @@
 #define blueconfig_h
 #include <Arduino.h>
 #include "BluetoothSerial.h"
+#include "ArduinoNvs.h"
 class blueconfig
 {
 public:

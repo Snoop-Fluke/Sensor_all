@@ -95,8 +95,9 @@ void Start_Murata :: Loop_LoRA(uint8_t amount_car)
         }
 }
 
-void Start_Murata :: DOWNLINK()
+int* Start_Murata :: DOWNLINK()
 {
+
         String DataRx = myLora.getRx();
         uint8_t ptr = 0;
         char Data[11];
@@ -108,26 +109,39 @@ void Start_Murata :: DOWNLINK()
                         if (Data[ptr] == 'c' && Data[ptr + 1] == '1' )//config speed
                         {
                                 ptr += 2;
-                                uint8_t config_speed = htoi(Data[ptr]) * 16 + htoi(Data[ptr + 1]);
+                                MURATA.config_speed[0] = htoi(Data[ptr]) * 16 + htoi(Data[ptr + 1]);
                                 ptr += 2;
                                 Serial.print(F("Config Speed : "));
-                                Serial.println(config_speed);
+                                Serial.println(MURATA.config_speed[0]);
                         }
                         else if (Data[ptr] == 'c' && Data[ptr + 1] == '2' )//config start detect
                         {
                                 ptr += 2;
-                                uint8_t st_detect = htoi(Data[ptr]) * 16 + htoi(Data[ptr + 1]);
+                                MURATA.config_speed[1] = htoi(Data[ptr]) * 16 + htoi(Data[ptr + 1]);
                                 ptr += 2;
                                 Serial.print(F("Start Detect : "));
-                                Serial.println(st_detect);
+                                Serial.println(MURATA.config_speed[1]);
+                        }
+                        else if (Data[ptr] == 'c' && Data[ptr + 1] == '3' )//config start detect
+                        {
+                                ptr += 2;
+                                MURATA.config_speed[2] = htoi(Data[ptr]) * 16 + htoi(Data[ptr + 1]);
+                                ptr += 2;
+                                Serial.print(F("Start Detect : "));
+                                Serial.println(MURATA.config_speed[2]);
                         }
                         else
                         {
                                 ptr = ptr + 2;
                         }
                 }
+                NVS.setInt("Sp_St",MURATA.config_speed[0]);
+                NVS.setInt("Sp_Lt", MURATA.config_speed[1]);
+                NVS.setInt("Am_car", MURATA.config_speed[2]);
                 DataRx = "";
                 for ( uint8_t i = 0; i < sizeof(Data); ++i ) //Clear_data
                         Data[i] = (char)0;
         }
+        return MURATA.config_speed;
+
 }
