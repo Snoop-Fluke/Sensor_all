@@ -25,10 +25,8 @@ struct SOLAR_VOLT
         uint8_t SOLARVOLTAGE_PIN = 39;
         float val_volt;
 } SOLAR_VOLT;
-int *rx_data;
-blueconfig blue_fn;
+// int *rx_data;
 segment seg(25,32,33);//set_pin_segment
-Start_Murata start_murata;
 void setup()
 {
         Serial.begin(115200);
@@ -41,7 +39,7 @@ void setup()
         // start_murata.initialize_radio();//ฟังก์ชั่นขารีเซ็ท LoRA
         xTaskCreate(Loop_BT_CF, "Loop_BT_CF", 2048, NULL, 1, NULL);
         // xTaskCreate(Loop_LoRA_task, "Loop_LoRA_task", 2048, NULL, 2, NULL);
-        // xTaskCreate(Loop_byte_Test, "Loop_byte_Test", 4096, NULL, 3, NULL);
+        // xTaskCreate(Loop_byte_Test, "Loop_byte_Test", 2048, NULL, 3, NULL);
         // xTaskCreate(Loop_LED_monitor, "Loop_LED_monitor", 2048, NULL, 5, NULL);
 }
 int voltage_solar()
@@ -100,26 +98,26 @@ void byte_Test()
                 }
         }
 }
-// void Loop_byte_Test( void * parameter )
-// {
-//
-//         while (1)
-//         {
-//                 // Serial.println(val_volt);
-//                 // Serial.println(dimmer_LED(val_volt));
-//                 byte_Test();
-//                 delay(2);
-//         }
-//         vTaskDelete( NULL );
-// }
+void Loop_byte_Test( void * parameter )
+{
+
+        while (1)
+        {
+                // Serial.println(val_volt);
+                // Serial.println(dimmer_LED(val_volt));
+                byte_Test();
+                delay(2);
+        }
+        vTaskDelete( NULL );
+}
 // void Loop_LoRA_task( void * parameter )
 // {
 //         while (1)
 //         {
-//                 int* murata_cf = start_murata.DOWNLINK();
-//                 start_murata.Loop_LoRA(NVS.getInt("Am_car"));//set_Amount_car
-//                 start_murata.DOWNLINK();
-//                 start_murata.Enable_status();
+//                 // int* murata_cf = start_murata.DOWNLINK();
+//                 // start_murata.Loop_LoRA(NVS.getInt("Am_car"));//set_Amount_car
+//                 // start_murata.DOWNLINK();
+//                 // start_murata.Enable_status();
 //                 delay(10);
 //         }
 //         vTaskDelete( NULL );
@@ -139,7 +137,8 @@ void Loop_BT_CF( void * parameter )
         {
                 blue_fn.blue_rx();
                 delay(1000);
-                Serial.printf("val0\t%d val1\t%d val2\t%d\n",NVS.getInt("Sp_St"),NVS.getInt("Sp_Lt"),NVS.getInt("Bluecf_3"));
+                Serial.printf("val0\t%d val1\t%d val2\t%d\n",NVS.getInt("Sp_St"),NVS.getInt("Sp_Lt"),NVS.getInt("Am_car"));
+                Serial.printf("%d\n",NVS.getInt("Am_car"));
         }
         vTaskDelete( NULL );
 }

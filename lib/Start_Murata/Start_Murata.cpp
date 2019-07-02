@@ -143,5 +143,5 @@ int* Start_Murata :: DOWNLINK()
                         Data[i] = (char)0;
         }
         return MURATA.config_speed;
-
 }
+Start_Murata start_murata;

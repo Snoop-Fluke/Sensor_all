@@ -11,4 +11,5 @@ void blueinit();
 int* blue_rx();
 int incoming[4] = {10, 20, 15, 1};
 };
+extern blueconfig blue_fn;
 #endif

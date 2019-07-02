@@ -24,3 +24,4 @@ int* blueconfig :: blue_rx()
         return incoming;
         delay(2);
 }
+blueconfig blue_fn;

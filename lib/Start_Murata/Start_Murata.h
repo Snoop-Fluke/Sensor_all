@@ -28,4 +28,5 @@ void Enable_status();
 void Loop_LoRA(uint8_t amount_car);
 int* DOWNLINK();
 };
+extern Start_Murata start_murata;
 #endif
