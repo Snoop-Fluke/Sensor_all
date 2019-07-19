@@ -14,6 +14,7 @@ void Start_Murata :: initialize_radio()
         digitalWrite(4, HIGH);
         delay(1000); //wait for startup message
         loraSerial.flush();
+        Serial.println(F("StartupLoRA"));
         Serial.print(F("Connection Murata:"));
         if (myLora.startat() == "\r\nOK\r\n")
         {

@@ -4,6 +4,7 @@ void blueconfig :: blueinit()
         NVS.begin();
         ESP_BT.begin("ESP32_TEST"); //Name of your Bluetooth Signal
         Serial.println("Bluetooth Device is Ready to Pair");
+
 }
 int* blueconfig :: blue_rx()
 {
