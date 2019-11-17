@@ -1,17 +1,17 @@
 #include <Arduino.h>
 #include "ThingsBoard.h"
 #include <WiFi.h>
-#define WIFI_NAME           "snoop_fluke"
-#define WIFI_PASSWORD       "fluke0902"
+#define WIFI_NAME           "YR_WIFI"
+#define WIFI_PASSWORD       "iloveYR_WIFI"
 #define TOKEN               "owwRIL9PjSOGi4OobCzN"
 #define THINGSBOARD_SERVER  "demo.thingsboard.io"
 
-#define SensorPin 34            //pH meter Analog output to Arduino Analog Input 0
+#define PH_SENSOR 34            //pH meter Analog output to Arduino Analog Input 0
 #define RAINSERSOR 35
 #define TRIGPIN 12
 #define ECHOPIN 14
 #define EC_SENSOR 32
-#define OFFSET 0.00            //deviation compensate
+#define OFFSET -3.5           //deviation compensate
 
 void InitWiFi();
 void reconnect();
@@ -27,8 +27,8 @@ void setup() {
         // pinMode(ECHOPIN,OUTPUT);
         InitWiFi();
         Serial.println(F("Connected to AP"));
-        xTaskCreate(Task_PH_sensor,"Task_PH_sensor",1024,NULL,5,NULL);
-        xTaskCreate(Task_EC_sensor,"Task_PH_sensor",1024,NULL,6,NULL);
+        // xTaskCreate(Task_PH_sensor,"Task_PH_sensor",1024,NULL,5,NULL);
+        // xTaskCreate(Task_EC_sensor,"Task_PH_sensor",1024,NULL,6,NULL);
 }
 void InitWiFi()
 {
@@ -60,11 +60,11 @@ float ph_sensor()
         unsigned long int avgValue; //Store the average value of the sensor feedback
 
         int buf[10];          //buffer for read analog
-        // int ana = analogRead(SensorPin);
-        // printf("analog_val\t%d\n",ana);
+        int ana = analogRead(PH_SENSOR);
+        printf("analog_val\t%d\n",ana);
         for(int i=0; i<10; i++) //Get 10 sample value from the sensor for smooth the value
         {
-                buf[i]=analogRead(SensorPin);
+                buf[i]=analogRead(PH_SENSOR);
                 delay(10);
         }
         for(int i=0; i<9; i++) //sort the analog from small to large
@@ -87,19 +87,22 @@ float ph_sensor()
         // Serial.print("    pH:");
         // Serial.print(phValue,2);
         // Serial.println(" ");
+        tb.sendTelemetryFloat("PH_SENSOR",phValue); //send_data
         return phValue;
 }
 int rain_sensor()
 {
         int ana_read = analogRead(RAINSERSOR);
+        tb.sendTelemetryInt("RAIN_SENSOR",ana_read); //send_data
         return ana_read;
 }
 
 float ec_sensor()
 {
         int sensor_val = analogRead(EC_SENSOR);
-        Serial.println(sensor_val);
-        float ec_val = sensor_val * (5/4095);
+        // Serial.println(sensor_val);
+        float ec_val = sensor_val * (3.3/4095);
+        tb.sendTelemetryInt("EC_SENSOR",ec_val); //send_data
         return ec_val;
 }
 uint8_t ultra_sensor()
@@ -115,58 +118,61 @@ uint8_t ultra_sensor()
 
         duration = pulseIn(ECHOPIN, HIGH);
         distance= (duration/2) / 29.1;
+        tb.sendTelemetryInt("ULTRA_SENSOR",distance); //send_data
         return distance;
 }
 void things_connect()
 {
-  if (status != WL_CONNECTED) {
-          Serial.println(F("Connecting to AP ..."));
-          Serial.print(F("Attempting to connect to WPA SSID: "));
-          reconnect();
-  }
+        if (status != WL_CONNECTED) {
+                Serial.println(F("Connecting to AP ..."));
+                Serial.print(F("Attempting to connect to WPA SSID: "));
+                reconnect();
+        }
 
-  if (!tb.connected()) {
-          // Connect to the ThingsBoard
-          Serial.print(F("Connecting to: "));
-          Serial.print(THINGSBOARD_SERVER);
-          Serial.print(F(" with token "));
-          Serial.println(TOKEN);
-          if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
-              Serial.println(F("Failed to connect"));
-          }
-  }
-  // tb.sendTelemetryInt("temperature",ran_data); //send_data
+        if (!tb.connected()) {
+                // Connect to the ThingsBoard
+                Serial.print(F("Connecting to: "));
+                Serial.print(THINGSBOARD_SERVER);
+                Serial.print(F(" with token "));
+                Serial.println(TOKEN);
+                if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
+                        Serial.println(F("Failed to connect"));
+                }
+        }
+        // tb.sendTelemetryInt("temperature",ran_data); //send_data
 }
 
 void Task_PH_sensor(void *ignore)
 {
-  while(1)
-  {
-    Serial.println("test_task");
-    delay(2000);
-  }
+        while(1)
+        {
+                Serial.println("test_task");
+                delay(2000);
+        }
 }
 
 void Task_EC_sensor(void *ignore)
 {
-  while(1)
-  {
-    Serial.println("test_task2");
-    delay(2000);
-  }
+        while(1)
+        {
+                Serial.println("test_task2");
+                delay(2000);
+        }
 }
-
 void loop() {
-  // things_connect();
-  // tb.sendTelemetryInt("temperature",100); //send_data
-        // Serial.print("PH_VAL : ");
-        // Serial.println(ph_sensor());
-        // Serial.print("RAIN_VAL : ");
-        // Serial.println(rain_sensor());
-        // Serial.print("ULTRA_VAL : ");
-        // Serial.println(ultra_sensor());
-        // Serial.print("EC_VAL1 : ");
-        // Serial.println(ec_sensor());
-        delay(5000);
+        things_connect();
+        // tb.sendTelemetryInt("temperature",55); //send_data
+        Serial.print("PH_VAL : ");
+        Serial.println(ph_sensor());
+        delay(2000);
+        Serial.print("RAIN_VAL : ");
+        Serial.println(rain_sensor());
+        delay(2000);
+        Serial.print("ULTRA_VAL : ");
+        Serial.println(ultra_sensor());
+        delay(2000);
+        Serial.print("EC_VAL1 : ");
+        Serial.println(ec_sensor());
+        delay(2000);
 
 }
