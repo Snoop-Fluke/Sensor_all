@@ -10,13 +10,20 @@
 #define RAINSERSOR 35
 #define TRIGPIN 12
 #define ECHOPIN 14
+#define FLOW_SENSOR 5
 #define EC_SENSOR 32
 #define OFFSET -3.5           //deviation compensate
+
+volatile int flow_frequency; // Measures flow sensor pulses
+
+unsigned long currentTime;
+unsigned long cloopTime;
 
 void InitWiFi();
 void reconnect();
 void Task_PH_sensor(void *ignore);
 void Task_EC_sensor(void *ignore);
+void flow ();
 WiFiClient espClient;
 ThingsBoard tb(espClient);
 int status = WL_IDLE_STATUS;
@@ -24,6 +31,15 @@ int status = WL_IDLE_STATUS;
 void setup() {
         Serial.begin(115200);
         pinMode(TRIGPIN,OUTPUT);
+
+        pinMode(FLOW_SENSOR, INPUT);
+        digitalWrite(FLOW_SENSOR, HIGH); // Optional Internal Pull-Up
+        Serial.begin(9600);
+        attachInterrupt(0, flow, RISING); // Setup Interrupt
+        sei(); // Enable interrupts
+        currentTime = millis();
+        cloopTime = currentTime;
+
         // pinMode(ECHOPIN,OUTPUT);
         InitWiFi();
         Serial.println(F("Connected to AP"));
@@ -92,7 +108,7 @@ float ph_sensor()
 }
 int rain_sensor()
 {
-        int ana_read = analogRead(RAINSERSOR);
+        int ana_read = analogRead(RAINSERSOR)-4095;
         tb.sendTelemetryInt("RAIN_SENSOR",ana_read); //send_data
         return ana_read;
 }
@@ -110,10 +126,10 @@ uint8_t ultra_sensor()
         long duration;
         int distance;
         digitalWrite(TRIGPIN, LOW);
-        delayMicroseconds(2);
+        delay(2);
 
         digitalWrite(TRIGPIN, HIGH);
-        delayMicroseconds(10);
+        delay(10);
         digitalWrite(TRIGPIN, LOW);
 
         duration = pulseIn(ECHOPIN, HIGH);
@@ -175,4 +191,24 @@ void loop() {
         Serial.println(ec_sensor());
         delay(2000);
 
+}
+void flow () // Interrupt function
+{
+        flow_frequency++;
+}
+int flow_sensor()
+{
+        unsigned int l_hour; // Calculated litres/hour
+        currentTime = millis();
+        // Every second, calculate and print litres/hour
+        if(currentTime >= (cloopTime + 1000))
+        {
+                cloopTime = currentTime; // Updates cloopTime
+                // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
+                l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
+                flow_frequency = 0; // Reset Counter
+                Serial.print(l_hour, DEC); // Print litres/hour
+                Serial.println(" L/hour");
+        }
+        return l_hour;
 }
