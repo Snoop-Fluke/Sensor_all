@@ -41,6 +41,7 @@ void setup() {
         cloopTime = currentTime;
 
         // pinMode(ECHOPIN,OUTPUT);
+        Serial.println("Wait_connect");
         InitWiFi();
         Serial.println(F("Connected to AP"));
         // xTaskCreate(Task_PH_sensor,"Task_PH_sensor",1024,NULL,5,NULL);
@@ -108,7 +109,7 @@ float ph_sensor()
 }
 int rain_sensor()
 {
-        int ana_read = analogRead(RAINSERSOR)-4095;
+        int ana_read = 4095 - analogRead(RAINSERSOR);
         tb.sendTelemetryInt("RAIN_SENSOR",ana_read); //send_data
         return ana_read;
 }
@@ -116,10 +117,10 @@ int rain_sensor()
 float ec_sensor()
 {
         int sensor_val = analogRead(EC_SENSOR);
-        // Serial.println(sensor_val);
+        Serial.println(sensor_val);
         float ec_val = sensor_val * (3.3/4095);
-        tb.sendTelemetryInt("EC_SENSOR",ec_val); //send_data
-        return ec_val;
+        tb.sendTelemetryInt("EC_SENSOR",sensor_val); //send_data
+        return sensor_val;
 }
 uint8_t ultra_sensor()
 {
@@ -137,6 +138,27 @@ uint8_t ultra_sensor()
         tb.sendTelemetryInt("ULTRA_SENSOR",distance); //send_data
         return distance;
 }
+void flow () // Interrupt function
+{
+        flow_frequency++;
+}
+int flow_sensor()
+{
+        unsigned int l_hour; // Calculated litres/hour
+        currentTime = millis();
+        // Every second, calculate and print litres/hour
+        if(currentTime >= (cloopTime + 1000))
+        {
+                cloopTime = currentTime; // Updates cloopTime
+                // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
+                l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
+                flow_frequency = 0; // Reset Counter
+                Serial.print(l_hour, DEC); // Print litres/hour
+                Serial.println(" L/hour");
+        }
+        return l_hour;
+}
+
 void things_connect()
 {
         if (status != WL_CONNECTED) {
@@ -175,40 +197,19 @@ void Task_EC_sensor(void *ignore)
                 delay(2000);
         }
 }
-void loop() {
+void loop()
+{
         things_connect();
-        // tb.sendTelemetryInt("temperature",55); //send_data
         Serial.print("PH_VAL : ");
         Serial.println(ph_sensor());
-        delay(2000);
+        delay(1000);
         Serial.print("RAIN_VAL : ");
         Serial.println(rain_sensor());
-        delay(2000);
+        delay(1000);
         Serial.print("ULTRA_VAL : ");
         Serial.println(ultra_sensor());
-        delay(2000);
+        delay(1000);
         Serial.print("EC_VAL1 : ");
         Serial.println(ec_sensor());
-        delay(2000);
-
-}
-void flow () // Interrupt function
-{
-        flow_frequency++;
-}
-int flow_sensor()
-{
-        unsigned int l_hour; // Calculated litres/hour
-        currentTime = millis();
-        // Every second, calculate and print litres/hour
-        if(currentTime >= (cloopTime + 1000))
-        {
-                cloopTime = currentTime; // Updates cloopTime
-                // Pulse frequency (Hz) = 7.5Q, Q is flow rate in L/min.
-                l_hour = (flow_frequency * 60 / 7.5); // (Pulse frequency x 60 min) / 7.5Q = flowrate in L/hour
-                flow_frequency = 0; // Reset Counter
-                Serial.print(l_hour, DEC); // Print litres/hour
-                Serial.println(" L/hour");
-        }
-        return l_hour;
+        delay(60000);
 }
