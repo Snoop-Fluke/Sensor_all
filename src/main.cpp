@@ -175,6 +175,8 @@ void loop()
         Serial.println(do_sensor_);
         Serial.print("  Temp : ");
         Serial.print(temp);
+        Serial.print("  HUM : ");
+        Serial.print(hum);
         Serial.print("PH_VAL : ");
         Serial.println(ph_sensor());
         things_connect(); //ส่งข้อมูลขึ้นเซริฟเวอร์
