@@ -8,17 +8,17 @@
 #include "Do_sensor.h"
 #define WIFI_NAME           "snoop_fluke"
 #define WIFI_PASSWORD       "fluke0902"
-#define TOKEN               "owwRIL9PjSOGi4OobCzN"
+#define TOKEN               "cZeX7HjI1Y2EzxDz7lsW"
 #define THINGSBOARD_SERVER  "demo.thingsboard.io"
-#define DHTPIN 2 //กำหนด pin DHT
 #define DHTTYPE DHT22 //กำหนดชนิดของ DHT
-#define PH_SENSOR 25         //pH meter Analog output to Arduino Analog Input 0
-#define OFFSET -3.5           //deviation compensate
-#define SERVO_TIME 1 //กำหนดเวลาServo ทำงาน
-#define SENDDATA_TIME 1 //กำหนดเวลาส่งข้อมุล
-int pos = 0;
-#define SERVOPIN 5
 
+#define OFFSET -1.5           //deviation compensate
+#define SERVO_TIME 5 //กำหนดเวลาServo ทำงาน
+
+
+#define DHTPIN 2 //กำหนด pin DHT
+#define PH_SENSOR 36
+#define SERVOPIN 5
 int DoSensorPin = 35;
 unsigned long previousMillis =0;
 unsigned long previousMillis_2 =0;
@@ -35,7 +35,8 @@ ThingsBoard tb(espClient);
 int status = WL_IDLE_STATUS;
 DHT dht;
 
-void setup() {
+void setup()
+{
         Serial.begin(115200);
         Serial.println("Wait_connect");
         InitWiFi();
@@ -46,7 +47,7 @@ void setup() {
         pinMode(DoSensorPin,INPUT);
         _do_sensor.readDoCharacteristicValues();//read Characteristic Values calibrated from the EEPROM
         // xTaskCreate(Task_PH_sensor,"Task_PH_sensor",1024,NULL,5,NULL);
-        // xTaskCreate(task_servo_loop,"task_servo_loop",2048,NULL,6,NULL);
+        xTaskCreate(task_servo_loop,"task_servo_loop",2048,NULL,6,NULL);
 }
 void InitWiFi()
 {
@@ -103,64 +104,59 @@ float ph_sensor()
         // Serial.print("    pH:");
         // Serial.print(phValue,2);
         // Serial.println(" ");
-        tb.sendTelemetryFloat("PH_SENSOR",phValue); //send_data
+        // tb.sendTelemetryFloat("PH_SENSOR",phValue); //send_data
         return phValue;
 }
 void things_connect()
 {
-        unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis_3 >= 60000)//delayสำหรับset
-        {
-                previousMillis_3 = currentMillis;//delay
-                if (status != WL_CONNECTED) {
-                        Serial.println(F("Connecting to AP ..."));
-                        Serial.print(F("Attempting to connect to WPA SSID: "));
-                        reconnect();
-                }
-                if (!tb.connected()) {
-                        // Connect to the ThingsBoard
-                        Serial.print(F("Connecting to: "));
-                        Serial.print(THINGSBOARD_SERVER);
-                        Serial.print(F(" with token "));
-                        Serial.println(TOKEN);
-                        if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
-                                Serial.println(F("Failed to connect"));
-                        }
-                }
 
+        if (status != WL_CONNECTED) {
+                Serial.println(F("Connecting to AP ..."));
+                Serial.print(F("Attempting to connect to WPA SSID: "));
+                reconnect();
         }
-
+        if (!tb.connected()) {
+                // Connect to the ThingsBoard
+                Serial.print(F("Connecting to: "));
+                Serial.print(THINGSBOARD_SERVER);
+                Serial.print(F(" with token "));
+                Serial.println(TOKEN);
+                if (!tb.connect(THINGSBOARD_SERVER, TOKEN)) {
+                        Serial.println(F("Failed to connect"));
+                }
+        }
 }
-// void task_servo_loop(void *ignore)
-// {
-//         while(1)
-//         {
-//                 Serial.println("test_task");
-//                 bool servo_ = servo_loop();
-//                 delay(10);
-//         }
-//         vTaskDelete( NULL );
-// }
+void task_servo_loop(void *ignore)
+{
+        while(1)
+        {
+
+                bool servo_ = servo_loop();
+                delay(50);
+        }
+        vTaskDelete( NULL );
+}
 bool servo_loop()
 {
         unsigned long currentMillis = millis();
-        if (currentMillis - previousMillis >= 60000)//delayสำหรับset
+        if (currentMillis - previousMillis >= 60000*SERVO_TIME)//delayสำหรับset
         {
-                previousMillis = currentMillis;//delay
-                Serial.print("up_pos_");
-                myservo.write(90); // tell servo to go to position in variable 'pos'
-                delay(20);         // waits 15ms for the servo to reach the position
                 tb.sendTelemetryFloat("Servo",1);
-        }
-        if (currentMillis - previousMillis_2 >= 60000)//delayสำหรับset
-        {
-                previousMillis_2 = currentMillis;//delay
-                Serial.print("down_pos_");
-                Serial.println(pos);
-                myservo.write(0); // tell servo to go to position in variable 'pos'
-                delay(20);
+                previousMillis = currentMillis;//delay
+                for (int pos = 0; pos <= 180; pos += 1) {
+                        Serial.print("up_pos_");//จุ่มลงน้ำ
+                        myservo.write(pos);
+                        delay(20);
+                }
+                delay(180000);
                 tb.sendTelemetryFloat("Servo",0);
+                for (int pos = 180; pos >= 0; pos -= 1) { //ขึ้นจากน้ำ
+                        Serial.print("down_pos_");
+                        myservo.write(pos);
+                        delay(20);
+                }
         }
+
         return true;
 }
 float *dht_loop()
@@ -168,8 +164,6 @@ float *dht_loop()
         float *temp_hum = (float*) malloc(sizeof(float) * 2);
         *temp_hum = dht.getHumidity();
         *(temp_hum+1) = dht.getTemperature();
-        tb.sendTelemetryFloat("HUM-",dht.getHumidity());
-        tb.sendTelemetryFloat("TEMP-",dht.getTemperature());
         return (temp_hum);
 }
 
@@ -180,15 +174,26 @@ void loop()
         float *arr = dht_loop();
         float hum = arr[0];
         float temp = arr[1];
+        float do_sensor_ = (_do_sensor.dosensor_loop(DoSensorPin))/10;
+        float ph_sensor_ = ph_sensor();
         Serial.print("DO_sensor : ");
-        Serial.println(_do_sensor.dosensor_loop(DoSensorPin));
-        Serial.print("hum : ");
-        Serial.print(hum);
-        Serial.print("Temp : ");
+        Serial.println(do_sensor_);
+        Serial.print("  Temp : ");
         Serial.print(temp);
         Serial.print("PH_VAL : ");
         Serial.println(ph_sensor());
         things_connect(); //ส่งข้อมูลขึ้นเซริฟเวอร์
+
+        unsigned long currentMillis = millis();
+        if (currentMillis - previousMillis_3 >= 60000*(SERVO_TIME+1))//delayสำหรับset
+        {
+                previousMillis_3 = currentMillis;//delay
+                tb.sendTelemetryFloat("DO_SENSOR-",do_sensor_);
+                // tb.sendTelemetryFloat("HUM-",hum);
+                tb.sendTelemetryFloat("TEMP-",temp);
+                tb.sendTelemetryFloat("PH_SENSOR",ph_sensor_); //send_data
+                Serial.println("SEND_DATA_THINGSBOARD");
+        }
         delay(1000);
 
 }

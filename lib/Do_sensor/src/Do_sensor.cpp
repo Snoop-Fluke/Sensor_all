@@ -73,7 +73,7 @@ float Do_sensor :: dosensor_loop(int DoSensorPin)
                 // Serial.print(F("averageVoltage:"));
                 // Serial.print(SaturationDoVoltage,1);
                 // Serial.print(F("^C"));
-                doValue = pgm_read_float_near( &SaturationValueTab[0] + (int)(SaturationDoTemperature+0.5) ) * averageVoltage / SaturationDoVoltage; //calculate the do value, doValue = Voltage / SaturationDoVoltage * SaturationDoValue(with temperature compensation)
+                doValue = pgm_read_float_near( &SaturationValueTab[0] + (int)(SaturationDoTemperature+0.5) ) * averageVoltage / (SaturationDoVoltage+10); //calculate the do value, doValue = Voltage / SaturationDoVoltage * SaturationDoValue(with temperature compensation)
                 // Serial.print(F(",  DO Value:"));
                 // Serial.print(doValue,2);
                 // // tb.sendTelemetryFloat("DO_SENSOR-",doValue);
