@@ -44,6 +44,7 @@ void setup()
         Serial.println(F("Connected to AP"));
         myservo.setPeriodHertz(50);// standard 50 hz servo
         myservo.attach(SERVOPIN, 1000, 2000);
+        myservo.write(0);
         dht.setup(DHTPIN); // data pin 2
         pinMode(DoSensorPin,INPUT);
         _do_sensor.readDoCharacteristicValues();//read Characteristic Values calibrated from the EEPROM
