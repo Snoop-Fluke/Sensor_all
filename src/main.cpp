@@ -6,20 +6,21 @@
 #include <pgmspace.h>
 #include <EEPROM.h>
 #include "Do_sensor.h"
-#define WIFI_NAME           "snoop_fluke"
-#define WIFI_PASSWORD       "fluke0902"
+#define WIFI_NAME           "INE 06"
+#define WIFI_PASSWORD       "032263657"
 #define TOKEN               "cZeX7HjI1Y2EzxDz7lsW"
 #define THINGSBOARD_SERVER  "demo.thingsboard.io"
 #define DHTTYPE DHT22 //กำหนดชนิดของ DHT
 
-#define OFFSET -1.5           //deviation compensate
+#define OFFSET -0.5  //ตั้งค่า PH
 #define SERVO_TIME 5 //กำหนดเวลาServo ทำงาน
 
 
-#define DHTPIN 2 //กำหนด pin DHT
-#define PH_SENSOR 36
-#define SERVOPIN 5
-int DoSensorPin = 35;
+#define DHTPIN 5 //กำหนด pin DHT
+#define PH_SENSOR 34 //PH กำหนดขา
+#define SERVOPIN 4 //กำหนดขา servo
+int DoSensorPin = 35; //กำหนดขา DO
+
 unsigned long previousMillis =0;
 unsigned long previousMillis_2 =0;
 unsigned long previousMillis_3 =0;
@@ -46,7 +47,6 @@ void setup()
         dht.setup(DHTPIN); // data pin 2
         pinMode(DoSensorPin,INPUT);
         _do_sensor.readDoCharacteristicValues();//read Characteristic Values calibrated from the EEPROM
-        // xTaskCreate(Task_PH_sensor,"Task_PH_sensor",1024,NULL,5,NULL);
         xTaskCreate(task_servo_loop,"task_servo_loop",2048,NULL,6,NULL);
 }
 void InitWiFi()
@@ -101,15 +101,10 @@ float ph_sensor()
                 avgValue+=buf[i];
         float phValue=(float)avgValue*5.0/4095/6; //convert the analog into millivolt
         phValue=3.5*phValue+OFFSET;                //convert the millivolt into pH value
-        // Serial.print("    pH:");
-        // Serial.print(phValue,2);
-        // Serial.println(" ");
-        // tb.sendTelemetryFloat("PH_SENSOR",phValue); //send_data
         return phValue;
 }
 void things_connect()
 {
-
         if (status != WL_CONNECTED) {
                 Serial.println(F("Connecting to AP ..."));
                 Serial.print(F("Attempting to connect to WPA SSID: "));
@@ -130,7 +125,6 @@ void task_servo_loop(void *ignore)
 {
         while(1)
         {
-
                 bool servo_ = servo_loop();
                 delay(50);
         }
@@ -156,7 +150,6 @@ bool servo_loop()
                         delay(20);
                 }
         }
-
         return true;
 }
 float *dht_loop()
@@ -164,17 +157,19 @@ float *dht_loop()
         float *temp_hum = (float*) malloc(sizeof(float) * 2);
         *temp_hum = dht.getHumidity();
         *(temp_hum+1) = dht.getTemperature();
+        tb.sendTelemetryFloat("TEMP-",dht.getTemperature());
+        tb.sendTelemetryFloat("HUM-",dht.getHumidity()/100);
         return (temp_hum);
 }
-
-
 void loop()
 {
 
         float *arr = dht_loop();
         float hum = arr[0];
         float temp = arr[1];
+        //
         float do_sensor_ = (_do_sensor.dosensor_loop(DoSensorPin))/10;
+        //
         float ph_sensor_ = ph_sensor();
         Serial.print("DO_sensor : ");
         Serial.println(do_sensor_);
@@ -187,10 +182,8 @@ void loop()
         unsigned long currentMillis = millis();
         if (currentMillis - previousMillis_3 >= 60000*(SERVO_TIME+1))//delayสำหรับset
         {
-                previousMillis_3 = currentMillis;//delay
+                previousMillis_3 = currentMillis; //delay
                 tb.sendTelemetryFloat("DO_SENSOR-",do_sensor_);
-                // tb.sendTelemetryFloat("HUM-",hum);
-                tb.sendTelemetryFloat("TEMP-",temp);
                 tb.sendTelemetryFloat("PH_SENSOR",ph_sensor_); //send_data
                 Serial.println("SEND_DATA_THINGSBOARD");
         }
