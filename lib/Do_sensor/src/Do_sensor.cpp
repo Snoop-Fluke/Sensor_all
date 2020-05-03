@@ -69,11 +69,12 @@ float Do_sensor :: dosensor_loop(int DoSensorPin)
                 {
                         analogBufferTemp[copyIndex]= analogBuffer[copyIndex];
                 }
-                averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 4495.0; // read the value more stable by the median filtering algorithm
+                averageVoltage = getMedianNum(analogBufferTemp,SCOUNT) * (float)VREF / 4095.0; // read the value more stable by the median filtering algorithm
                 // Serial.print(F("averageVoltage:"));
                 // Serial.print(SaturationDoVoltage,1);
                 // Serial.print(F("^C"));
-                doValue = pgm_read_float_near( &SaturationValueTab[0] + (int)(SaturationDoTemperature+0.5) ) * averageVoltage / (SaturationDoVoltage+10); //calculate the do value, doValue = Voltage / SaturationDoVoltage * SaturationDoValue(with temperature compensation)
+                doValue = pgm_read_float_near( &SaturationValueTab[0] + (int)(SaturationDoTemperature+0.5) ) * averageVoltage / (SaturationDoVoltage); //calculate the do value, doValue = Voltage / SaturationDoVoltage * SaturationDoValue(with temperature compensation)//edit03/05/2563
+                // doValue = pgm_read_float_near( &SaturationValueTab[0] + (int)(SaturationDoTemperature+0.5) ) * averageVoltage / (SaturationDoVoltage+10); //calculate the do value, doValue = Voltage / SaturationDoVoltage * SaturationDoValue(with temperature compensation)
                 // Serial.print(F(",  DO Value:"));
                 // Serial.print(doValue,2);
                 // // tb.sendTelemetryFloat("DO_SENSOR-",doValue);
