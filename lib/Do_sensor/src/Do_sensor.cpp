@@ -79,8 +79,8 @@ float Do_sensor :: dosensor_loop(int DoSensorPin)
                 // Serial.print(doValue,2);
                 // // tb.sendTelemetryFloat("DO_SENSOR-",doValue);
                 // Serial.println(F("mg/L"));
-                // Serial.print(F("Temperature:  "));
-                Serial.print(analogRead(DoSensorPin));
+                Serial.print(F("ANALOG_DO:  "));
+                Serial.println(analogRead(DoSensorPin));
         }
         return doValue;
 
