@@ -169,7 +169,7 @@ void loop()
         float hum = arr[0];
         float temp = arr[1];
         //
-        float do_sensor_ = (_do_sensor.dosensor_loop(DoSensorPin))/10;
+        float do_sensor_ = (_do_sensor.dosensor_loop(DoSensorPin));
         // float do_sensor_ = (_do_sensor.dosensor_loop(DoSensorPin)); //edit03/05/2563
         //
         float ph_sensor_ = ph_sensor();
