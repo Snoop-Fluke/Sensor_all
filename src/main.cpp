@@ -127,20 +127,13 @@ void things_connect()
                 }
         }
 }
-void task_servo_loop(void *ignore)
-{
-        while(1)
-        {
-                bool servo_ = servo_loop();
-                delay(50);
-        }
-        vTaskDelete( NULL );
-}
+
 bool servo_loop()
 {
         unsigned long currentMillis = millis();
         if (currentMillis - previousMillis >= 60000*SERVO_TIME)//delayสำหรับset
         {
+                servo_set=1;
                 tb.sendTelemetryFloat("Servo",1);
                 previousMillis = currentMillis;//delay
                 for (int pos = 0; pos <= 75; pos += 1) {
@@ -148,15 +141,15 @@ bool servo_loop()
                         myservo.write(pos);
                         delay(15);
                 }
-                servo_set=1;
                 delay(60000*TIME_DOWN);
+                servo_set=0;
                 tb.sendTelemetryFloat("Servo",0);
                 for (int pos = 75; pos >= 0; pos -= 1) { //ขึ้นจากน้ำ
                         Serial.print("down_pos_");
                         myservo.write(pos);
                         delay(15);
                 }
-                servo_set=0;
+
         }
         return false;
 }
@@ -171,9 +164,10 @@ float *dht_loop()
 }
 void send_ph_do(float ph_sensor_,float do_sensor_)
 {
-        unsigned long currentMillis = millis();
-        if (!servo_set)
+
+        if (servo_set == 1 )
         {
+                unsigned long currentMillis = millis();
                 if (currentMillis - previousMillis_4 >= 60000*(TIME_PH_DO))  //delayสำหรับset
                 {
                         previousMillis_4 = currentMillis;   //delay
@@ -186,6 +180,15 @@ void send_ph_do(float ph_sensor_,float do_sensor_)
                 }
         }
 
+}
+void task_servo_loop(void *ignore)
+{
+        while(1)
+        {
+                bool servo_ = servo_loop();
+                delay(50);
+        }
+        vTaskDelete( NULL );
 }
 void loop()
 {
