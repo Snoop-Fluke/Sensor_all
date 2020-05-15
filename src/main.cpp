@@ -13,7 +13,6 @@
 #define DHTTYPE DHT22 //กำหนดชนิดของ DHT
 
 #define TIME_DOWN 3   //เวลาจุ่ม
-#define TIME_PH_DO 1  //เวลาส่งข้อมูล DO PH
 #define SERVO_TIME 5 //กำหนดเวลาServo ทำงาน
 #define TIME_DHT_SEND 0.5 //เวลาส่งDHT
 
@@ -28,7 +27,6 @@ int servo_set=0;
 unsigned long previousMillis =0;
 unsigned long previousMillis_2 =0;
 unsigned long previousMillis_3 =0;
-unsigned long previousMillis_4 =0;
 
 Servo myservo;
 void InitWiFi();
@@ -133,7 +131,6 @@ bool servo_loop()
         unsigned long currentMillis = millis();
         if (currentMillis - previousMillis >= 60000*SERVO_TIME)//delayสำหรับset
         {
-                servo_set=1;
                 tb.sendTelemetryFloat("Servo",1);
                 previousMillis = currentMillis;//delay
                 for (int pos = 0; pos <= 75; pos += 1) {
@@ -141,7 +138,9 @@ bool servo_loop()
                         myservo.write(pos);
                         delay(15);
                 }
-                delay(60000*TIME_DOWN);
+                delay(60000*(TIME_DOWN/2));
+                servo_set=1;
+                delay(60000*(TIME_DOWN/2));
                 servo_set=0;
                 tb.sendTelemetryFloat("Servo",0);
                 for (int pos = 75; pos >= 0; pos -= 1) { //ขึ้นจากน้ำ
@@ -167,17 +166,14 @@ void send_ph_do(float ph_sensor_,float do_sensor_)
 
         if (servo_set == 1 )
         {
-                unsigned long currentMillis = millis();
-                if (currentMillis - previousMillis_4 >= 60000*(TIME_PH_DO))  //delayสำหรับset
-                {
-                        previousMillis_4 = currentMillis;   //delay
-                        tb.sendTelemetryFloat("DO_SENSOR-",do_sensor_);
-                        tb.sendTelemetryFloat("PH_SENSOR",ph_sensor_);   //send_data
-                        Serial.println("SEND_DATA_THINGSBOARD");
-                        Serial.println("SEND_DATA_THINGSBOARD");
-                        Serial.println("SEND_DATA_THINGSBOARD");
-                        Serial.println("SEND_DATA_THINGSBOARD");
-                }
+                tb.sendTelemetryFloat("DO_SENSOR-",do_sensor_);
+                delay(100);
+                tb.sendTelemetryFloat("PH_SENSOR",ph_sensor_); //send_data
+                Serial.println("SEND_DATA_THINGSBOARD");
+                Serial.println("SEND_DATA_THINGSBOARD");
+                Serial.println("SEND_DATA_THINGSBOARD");
+                Serial.println("SEND_DATA_THINGSBOARD");
+                servo_set = 0;
         }
 
 }
